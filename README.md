@@ -12,7 +12,7 @@ Note: using a .jpg or .png image is recommended. Limited file conversion is impl
   - Windows: ```openai-env\Scripts\activate```
   - Mac: ```source openai-env/bin/activate```
 - Install dependencies
-  - Run ```pip install --upgrade openai Flask requests Werkzeug```
+  - Run ```pip install --upgrade -r requirements.txt```
 - Run app.py to load Recycle_Bot!
 ## Recycle_Bot Features
 ### Basic Functions
@@ -21,6 +21,7 @@ Note: using a .jpg or .png image is recommended. Limited file conversion is impl
 - Adaptive location to tailor instructions to local recycling programs
 - Customizable personality with continued accuracy
 - Robust hand-crafted prompt, keeping responses concise and helpful (even with absurd or malicious parameters)
+- Structured OpenAI API responses replace brittle bracket parsing for answer, object, and disposal details
 - Dynamic prompting template, avoiding hardcoded settings
 - Vision API token optimization to ~300 per check
 

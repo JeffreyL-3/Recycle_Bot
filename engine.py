@@ -1,9 +1,36 @@
 import key
 import base64
 import requests
-import re
 import json
 import defaults
+
+RECYCLING_RESPONSE_FORMAT = {
+    "type": "json_schema",
+    "json_schema": {
+        "name": "recycling_answer",
+        "strict": True,
+        "schema": {
+            "type": "object",
+            "properties": {
+                "answer": {
+                    "type": "string",
+                    "description": "Whether the object is recyclable.",
+                    "enum": ["Yes", "Yes, but...", "No."]
+                },
+                "object": {
+                    "type": "string",
+                    "description": "The identified object in the uploaded image."
+                },
+                "details": {
+                    "type": "string",
+                    "description": "Brief, accurate disposal or recycling instructions."
+                }
+            },
+            "required": ["answer", "object", "details"],
+            "additionalProperties": False
+        }
+    }
+}
 
 # Function to encode the image
 def encode_image(image_path):
@@ -71,7 +98,7 @@ def query_recycling_info(image_path, town, state, object=defaults.getDefaultObje
                 "content": [
                     {
                         "type": "text",
-                        "text": "Is this " + object + " recyclable" + combinedLocation + "? All answers must be in this format: [Yes/No][object name][How to do this]. Example 1: [Yes][paper][Just toss it into your recycling bin!]. Example 2: [Yes, but...][phone][Don't throw it in the bin! You can recycle this by bringing it to your nearest recycling center!]. Example 3: [No][styrofoam container][No need to recycle. Just toss it in the trash!].",
+                        "text": "Is this " + object + " recyclable" + combinedLocation + "? Classify the answer as exactly one of: \"Yes\", \"Yes, but...\", or \"No.\" Identify the object and give concise disposal or recycling instructions.",
                     },
                     {
                         "type": "image_url",
@@ -85,6 +112,7 @@ def query_recycling_info(image_path, town, state, object=defaults.getDefaultObje
                 ]
             }
         ],
+        "response_format": RECYCLING_RESPONSE_FORMAT,
         #Hard cap on token usage (near impossible to reach). About $0.01 - $0.03
         "max_tokens": 1000
     }
@@ -101,37 +129,46 @@ def query_recycling_info(image_path, town, state, object=defaults.getDefaultObje
         print(str(response))
         return "Error code 11: Error in API call"
     
-# Parses through to find brackets. Expects [answer][object][details]
+# Parses the structured JSON response. Expects answer, object, and details.
 def separate_answer_and_details(combined_response):
     print(combined_response)
-    
+
     textResponse = str(combined_response)
-    
+
     if("Error code" in textResponse):
         return str(textResponse), "this", "This is probably because you took a photo of something the program didn't expect."
-    
-    # Find the positions of the brackets
-    first_open_bracket = textResponse.find('[')
-    first_close_bracket = textResponse.find(']', first_open_bracket + 1)
-    second_open_bracket = textResponse.find('[', first_close_bracket + 1)
-    second_close_bracket = textResponse.find(']', second_open_bracket + 1)
-    third_open_bracket = textResponse.find('[', second_close_bracket + 1)
-    third_close_bracket = textResponse.find(']', third_open_bracket + 1)
 
-    # Extract the personality and prompt
-    answer = textResponse[first_open_bracket+1:first_close_bracket]
-    object = textResponse[second_open_bracket+1:second_close_bracket]
-    details = textResponse[third_open_bracket+1:third_close_bracket]
+    try:
+        structured_response = combined_response if isinstance(combined_response, dict) else json.loads(textResponse)
+    except json.JSONDecodeError:
+        return "Error code 31: Structured response could not be parsed", "this", "The model did not return valid structured JSON."
+
+    try:
+        answer = structured_response["answer"]
+        object = structured_response["object"]
+        details = structured_response["details"]
+    except KeyError:
+        return "Error code 32: Structured response missing required field", "this", "The model response was missing expected recycling details."
 
     return answer, object, details
 
 def extract_message(json_response):
     # Navigate through the JSON structure to extract the message content
     # Assuming 'json_response' is the JSON object you provided
+    if not isinstance(json_response, dict):
+        return "Error code 20: API response was not valid JSON"
+
     if 'choices' in json_response and json_response['choices']:
         first_choice = json_response['choices'][0]
-        if 'message' in first_choice and 'content' in first_choice['message']:
-            return first_choice['message']['content']
+        if first_choice.get('finish_reason') == "content_filter":
+            return "Error code 24: Response blocked by content filter"
+        if 'message' in first_choice:
+            message = first_choice['message']
+            if message.get('refusal'):
+                return "Error code 23: " + str(message['refusal'])
+            if 'content' in message and message['content']:
+                return message['content']
+            return "Error code 21: Message content not found"
         else:
             return "Error code 21: Message content not found"
     else:
