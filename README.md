@@ -16,7 +16,7 @@ Note: using a .jpg or .png image is recommended. Limited file conversion is impl
 - Run app.py to load Recycle_Bot!
 ## Recycle_Bot Features
 ### Basic Functions
-- Upload images and receive realtime responses from GPT-4 Turbo
+- Upload images and receive realtime responses from GPT-4o
   - Plug-in support for other models is available by editing defaults.py
 - Adaptive location to tailor instructions to local recycling programs
 - Customizable personality with continued accuracy
