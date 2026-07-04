@@ -1,48 +1,133 @@
-function toggleNav(special = 0) {
-    var sidebar = document.getElementById("mySidebar");
-    //Special close
-    if (special==1) {
-        sidebar.style.bottom = "-320px"; // Hide the sidebar
-    }
-
-    //Special open
-    else if (special==2) {
-        sidebar.style.bottom = "0px"; // Hide the sidebar
-    }
-
-    else if (sidebar.style.bottom === "0px") {
-        sidebar.style.bottom = "-320px"; // Hide the sidebar
-    }
-    else {
-        sidebar.style.bottom = "0px"; // Show the sidebar
-    }
-}
-
-function updateFileName() {
-    var input = document.getElementById('image');
-    if (!input.files.length) {
-        return;
-    }
-    capturedImageFile = null;
-    document.getElementById('file-name').textContent = input.files[0].name;
-    toggleNav(2);
-}
-
 var capturedImageFile = null;
 var cameraStream = null;
+var loadingInterval = null;
+var isSubmitting = false;
+var currentFlow = 'choice';
 
-function setSelectedImage(file, fileName) {
-    capturedImageFile = file;
-    document.getElementById('image').value = '';
-    document.getElementById('file-name').textContent = fileName;
-    toggleNav(2);
+function toggleNav(special = 0) {
+    var sidebar = document.getElementById("mySidebar");
+
+    if (special == 1) {
+        sidebar.style.bottom = "-320px";
+    } else if (special == 2) {
+        sidebar.style.bottom = "0px";
+    } else if (sidebar.style.bottom === "0px") {
+        sidebar.style.bottom = "-320px";
+    } else {
+        sidebar.style.bottom = "0px";
+    }
 }
 
-function useCameraInput() {
-    var input = document.getElementById('camera-image');
-    if (input.files.length) {
-        setSelectedImage(input.files[0], input.files[0].name);
+function getFlowElements() {
+    return {
+        choiceScreen: document.getElementById('choice-screen'),
+        actionScreen: document.getElementById('action-screen'),
+        instruction: document.getElementById('flow-instruction'),
+        status: document.getElementById('flow-status'),
+        backButton: document.getElementById('backButton'),
+        captureButton: document.getElementById('capturePhotoButton'),
+        uploadInput: document.getElementById('image'),
+        cameraInput: document.getElementById('camera-image'),
+        video: document.getElementById('camera-preview')
+    };
+}
+
+function clearFileInputs() {
+    var elements = getFlowElements();
+    elements.uploadInput.value = '';
+    elements.cameraInput.value = '';
+}
+
+function showChoiceScreen() {
+    var elements = getFlowElements();
+    currentFlow = 'choice';
+    elements.choiceScreen.hidden = false;
+    elements.actionScreen.hidden = true;
+    elements.captureButton.hidden = true;
+    elements.backButton.disabled = false;
+    elements.instruction.textContent = '';
+    elements.status.textContent = '';
+}
+
+function showActionScreen(instructionText, statusText) {
+    var elements = getFlowElements();
+    elements.choiceScreen.hidden = true;
+    elements.actionScreen.hidden = false;
+    elements.instruction.textContent = instructionText;
+    elements.status.textContent = statusText || '';
+    elements.backButton.disabled = false;
+}
+
+function resetImageFlow() {
+    if (isSubmitting) {
+        return;
     }
+
+    stopCamera();
+    currentFlow = 'choice';
+    clearFileInputs();
+    capturedImageFile = null;
+    document.getElementById('result').innerHTML = '';
+    showChoiceScreen();
+}
+
+function startUploadFlow() {
+    if (isSubmitting) {
+        return;
+    }
+
+    stopCamera();
+    currentFlow = 'upload';
+    clearFileInputs();
+    capturedImageFile = null;
+    document.getElementById('result').innerHTML = '';
+    showActionScreen('Upload your photo', 'Choose an image from your device.');
+
+    setTimeout(function() {
+        if (currentFlow === 'upload') {
+            getFlowElements().uploadInput.click();
+        }
+    }, 50);
+}
+
+function startPhotoFlow() {
+    if (isSubmitting) {
+        return;
+    }
+
+    clearFileInputs();
+    currentFlow = 'photo';
+    capturedImageFile = null;
+    document.getElementById('result').innerHTML = '';
+    showActionScreen('Take your photo...', 'Opening camera.');
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        getFlowElements().cameraInput.click();
+        return;
+    }
+
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+        .then(function(stream) {
+            var elements = getFlowElements();
+
+            if (currentFlow !== 'photo') {
+                stream.getTracks().forEach(function(track) {
+                    track.stop();
+                });
+                return;
+            }
+
+            cameraStream = stream;
+            elements.video.srcObject = stream;
+            elements.video.hidden = false;
+            elements.captureButton.hidden = false;
+            elements.status.textContent = 'Point the camera at the item, then capture.';
+        })
+        .catch(function() {
+            var elements = getFlowElements();
+            elements.status.textContent = 'Choose or take a photo from your device.';
+            elements.cameraInput.click();
+        });
 }
 
 function stopCamera() {
@@ -53,10 +138,10 @@ function stopCamera() {
         cameraStream = null;
     }
 
-    document.getElementById('camera-preview').hidden = true;
-    document.getElementById('cancelCameraButton').hidden = true;
-    document.getElementById('takePhotoButton').textContent = 'Take Photo';
-    document.getElementById('takePhotoButton').disabled = false;
+    var elements = getFlowElements();
+    elements.video.hidden = true;
+    elements.video.srcObject = null;
+    elements.captureButton.hidden = true;
 }
 
 function dataUrlToBlob(dataUrl) {
@@ -72,16 +157,17 @@ function dataUrlToBlob(dataUrl) {
     return new Blob([array], { type: mime });
 }
 
-function saveCapturedCanvas(canvas) {
+function submitCanvas(canvas) {
     var fileName = 'camera-photo.jpg';
     var saveBlob = function(blob) {
         if (!blob) {
-            document.getElementById('result').innerHTML = 'Could not capture photo. Please try again.';
+            getFlowElements().status.textContent = 'Could not capture photo. Please try again.';
             return;
         }
 
-        setSelectedImage(blob, fileName);
+        capturedImageFile = blob;
         stopCamera();
+        sendFormData(blob, fileName);
     };
 
     if (canvas.toBlob) {
@@ -91,122 +177,136 @@ function saveCapturedCanvas(canvas) {
     }
 }
 
-function takePhoto() {
+function capturePhoto() {
     var video = document.getElementById('camera-preview');
     var canvas = document.getElementById('camera-canvas');
-    var takeButton = document.getElementById('takePhotoButton');
-    var cancelButton = document.getElementById('cancelCameraButton');
-
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        document.getElementById('camera-image').click();
-        return;
-    }
 
     if (!cameraStream) {
-        takeButton.textContent = 'Opening Camera';
-        takeButton.disabled = true;
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
-            .then(function(stream) {
-                cameraStream = stream;
-                video.srcObject = stream;
-                video.hidden = false;
-                cancelButton.hidden = false;
-                takeButton.textContent = 'Capture Photo';
-                takeButton.disabled = false;
-            })
-            .catch(function() {
-                takeButton.textContent = 'Take Photo';
-                takeButton.disabled = false;
-                document.getElementById('camera-image').click();
-            });
+        startPhotoFlow();
         return;
     }
 
     if (!video.videoWidth || !video.videoHeight) {
-        document.getElementById('result').innerHTML = 'Camera is starting. Please try again in a moment.';
+        getFlowElements().status.textContent = 'Camera is starting. Try again in a moment.';
         return;
     }
 
     canvas.width = video.videoWidth || 1280;
     canvas.height = video.videoHeight || 720;
     canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-    saveCapturedCanvas(canvas);
+    submitCanvas(canvas);
 }
 
-function sendFormData() {
-    var uploadedFile = document.getElementById('image').files[0];
-    var imageFile = capturedImageFile || uploadedFile;
+function handleUploadInput() {
+    var input = document.getElementById('image');
 
-    if (!imageFile) {
-        document.getElementById('result').innerHTML = 'Please upload an image or take a photo first.';
+    if (currentFlow !== 'upload') {
+        input.value = '';
+        return;
+    }
+
+    if (!input.files.length) {
+        showActionScreen('Upload your photo', 'No image selected.');
+        return;
+    }
+
+    capturedImageFile = null;
+    sendFormData(input.files[0], input.files[0].name);
+}
+
+function useCameraInput() {
+    var input = document.getElementById('camera-image');
+
+    if (currentFlow !== 'photo') {
+        input.value = '';
+        return;
+    }
+
+    if (!input.files.length) {
+        showActionScreen('Take your photo...', 'No photo selected.');
+        return;
+    }
+
+    capturedImageFile = input.files[0];
+    sendFormData(input.files[0], input.files[0].name);
+}
+
+function saveSettings() {
+    localStorage.setItem('api_key', document.getElementById('api_key').value);
+    localStorage.setItem('town', document.getElementById('town').value);
+    localStorage.setItem('state', document.getElementById('state').value);
+    localStorage.setItem('personality', document.getElementById('personality').value);
+}
+
+function sendFormData(imageFile, fileName) {
+    if (!imageFile || isSubmitting) {
         return;
     }
 
     var formData = new FormData();
-    formData.append('image', imageFile, imageFile.name || 'camera-photo.jpg');
+    formData.append('image', imageFile, fileName || imageFile.name || 'camera-photo.jpg');
     formData.append('town', document.getElementById('town').value);
     formData.append('state', document.getElementById('state').value);
     formData.append('object', document.getElementById('object').value);
     formData.append('personality', document.getElementById('personality').value);
-    formData.append('api_key', document.getElementById('api_key').value); // Append the API key
-
-    var apiKey = document.getElementById('api_key').value;
-    localStorage.setItem('api_key', apiKey);
-    var save_town = document.getElementById('town').value;
-    localStorage.setItem('town', save_town);
-    var save_state = document.getElementById('state').value;
-    localStorage.setItem('state', save_state);
-    var save_personality = document.getElementById('personality').value;
-    localStorage.setItem('personality', save_personality);
+    formData.append('api_key', document.getElementById('api_key').value);
+    saveSettings();
 
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '/process', true);
     xhr.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 200) {
             var response = JSON.parse(this.responseText);
-            // Update the result div with the response data
             document.getElementById('result').innerHTML = '<div id="responseHeader">' + response.header + '</div>' +
                                                             '<div id="responseDetails">' + response.details + '</div>';
-            stopLoading(); // Call this to stop loading indication
+            stopLoading('Ready for another photo.');
         } else if (this.readyState === 4) {
-            // Handle errors (e.g., server errors, network issues)
-            document.getElementById('result').innerHTML = "Error loading results. Please try again.";
-            stopLoading();
+            document.getElementById('result').innerHTML = 'Error loading results. Please try again.';
+            stopLoading('Something went wrong.');
         }
     };
-    xhr.send(formData);
-    startLoading(); // Call this to start loading indication
-}
 
-var loadingInterval; // Declare this outside so it can be cleared later
+    xhr.send(formData);
+    startLoading();
+}
 
 function startLoading() {
-    toggleNav(1); // Hide the sidebar
-    
-    var button = document.getElementById('checkButton');
-    button.innerHTML = 'Loading';
+    var elements = getFlowElements();
     var count = 0;
+    isSubmitting = true;
+    currentFlow = 'submitting';
+    toggleNav(1);
+    stopCamera();
+    elements.backButton.disabled = true;
+    elements.captureButton.hidden = true;
+    elements.instruction.textContent = 'Photo received';
+    elements.status.textContent = 'Checking';
 
+    clearInterval(loadingInterval);
     loadingInterval = setInterval(function() {
         if (count === 3) {
-            button.innerHTML = 'Loading';
+            elements.status.textContent = 'Checking';
             count = 0;
         } else {
-            button.innerHTML += '.';
+            elements.status.textContent += '.';
             count++;
         }
-    }, 500); // Change text every 500 milliseconds
+    }, 500);
 }
 
-// Function to stop the loading
-function stopLoading() {
+function stopLoading(statusText) {
     clearInterval(loadingInterval);
-    var button = document.getElementById('checkButton');
-    button.innerHTML = 'Check';
+    loadingInterval = null;
+    isSubmitting = false;
+    currentFlow = 'result';
+
+    var elements = getFlowElements();
+    elements.backButton.disabled = false;
+    elements.instruction.textContent = 'Photo checked';
+    elements.status.textContent = statusText || '';
 }
 
 function retrieveLocalStorageData() {
-    // Retrieve each value from localStorage and set it to the corresponding input field
     var apiKey = localStorage.getItem('api_key');
     if (apiKey) {
         document.getElementById('api_key').value = apiKey;
@@ -228,19 +328,11 @@ function retrieveLocalStorageData() {
     }
 }
 
-
 window.onload = function() {
-    var savedApiKey = localStorage.getItem('api_key');
-    if (savedApiKey) {
-        document.getElementById('api_key').value = savedApiKey;
-    }
     var sidebar = document.getElementById("mySidebar");
-    sidebar.style.bottom = "0px"; // Or "0px" if you want it to be open initially
-    if (document.getElementById('result')) {
-        stopLoading();
-    }
-
-    retrieveLocalStorageData(); // Retrieve and display localStorage data on window load
+    sidebar.style.bottom = "0px";
+    showChoiceScreen();
+    retrieveLocalStorageData();
 };
 
 function clearData() {
@@ -250,16 +342,14 @@ function clearData() {
     localStorage.removeItem('personality');
 
     document.getElementById('api_key').value = '';
-    document.getElementById('town').value = ''; // Also clear the input field
+    document.getElementById('town').value = '';
     document.getElementById('state').value = '';
     document.getElementById('personality').value = '';
 
-    // Show the cleared banner
     var banner = document.getElementById('clearedBanner');
     banner.style.display = 'block';
 
-    // Hide the banner after a few seconds
     setTimeout(function() {
         banner.style.display = 'none';
-    }, 3000); // Adjust the time as needed
+    }, 3000);
 }
