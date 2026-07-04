@@ -19,6 +19,40 @@ function toggleNav(special = 0) {
     }
 }
 
+// On small screens the flyout menu is pinned to the bottom of the viewport and
+// can cover the centered UI. This runs ONCE on load (while the flyout is open)
+// to lift the whole UI up just enough to clear the flyout -- but never so far
+// that it slides under the top bar (hamburger / Clear Data). The resulting
+// position is then locked in: it does not react to flyout toggles or resizing.
+function lockLayoutForFlyout() {
+    var container = document.querySelector('.container');
+    var sidebar = document.getElementById('mySidebar');
+    var heading = container ? container.querySelector('h1') : null;
+
+    if (!container || window.innerWidth > 600) {
+        return;
+    }
+
+    var gap = 16;                 // breathing room between UI and flyout
+    var topBarBottom = 72;        // space reserved for the fixed top bar
+    var flyoutTop = window.innerHeight - sidebar.offsetHeight;
+    var containerRect = container.getBoundingClientRect();
+
+    var overlap = containerRect.bottom + gap - flyoutTop;
+    if (overlap <= 0) {
+        return; // already fits above the flyout; no lift needed
+    }
+
+    // Don't lift past the top bar: the topmost visible element must stay below it.
+    var contentTop = heading ? heading.getBoundingClientRect().top : containerRect.top;
+    var maxShift = Math.max(0, contentTop - topBarBottom);
+    var shift = Math.min(overlap, maxShift);
+
+    if (shift > 0) {
+        container.style.transform = 'translateY(-' + shift + 'px)';
+    }
+}
+
 function getFlowElements() {
     return {
         choiceScreen: document.getElementById('choice-screen'),
@@ -355,6 +389,7 @@ window.onload = function() {
     sidebar.style.bottom = "0px";
     showChoiceScreen();
     retrieveLocalStorageData();
+    lockLayoutForFlyout();
 };
 
 function clearData() {

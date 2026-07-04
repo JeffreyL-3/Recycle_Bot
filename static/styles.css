@@ -173,6 +173,13 @@ input[type="file"] {
 }
 
 @media (max-width: 600px) {
+    /* Reserve the flyout's height at the bottom so the centered UI is
+       pushed up above the open menu. The container's padding-top still
+       keeps it clear of the top bar (hamburger + Clear Data). */
+    body {
+        padding-bottom: 320px;
+    }
+
     h1 {
         font-size: 42px;
     }
