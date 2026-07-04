@@ -106,6 +106,7 @@ function resetImageFlow() {
     capturedImageFile = null;
     document.getElementById('result').innerHTML = '';
     showChoiceScreen();
+    toggleNav(2); // back on the home screen: re-show the flyout
 }
 
 function startUploadFlow() {
@@ -120,6 +121,7 @@ function startUploadFlow() {
     capturedImageFile = null;
     document.getElementById('result').innerHTML = '';
     showActionScreen('Upload your photo', 'Choose an image from your device.');
+    toggleNav(1); // leaving the home screen: hide the flyout
     getFlowElements().uploadInput.click();
 }
 
@@ -135,6 +137,7 @@ function startPhotoFlow() {
     capturedImageFile = null;
     document.getElementById('result').innerHTML = '';
     showActionScreen('Take your photo...', 'Opening camera.');
+    toggleNav(1); // leaving the home screen: hide the flyout
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         getFlowElements().cameraInput.click();
