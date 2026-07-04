@@ -34,7 +34,12 @@
             <form action="/" method="post" enctype="multipart/form-data">
                 <label for="image" class="custom-file-upload">Upload Image</label>
                 <input type="file" name="image" id="image" required onchange="updateFileName()">
+                <input type="file" id="camera-image" accept="image/*" capture="environment" onchange="useCameraInput()">
+                <button type="button" id="takePhotoButton" onclick="takePhoto()">Take Photo</button>
+                <button type="button" id="cancelCameraButton" onclick="stopCamera()" hidden>Cancel</button>
                 <span id="file-name" class="file-name"></span><br><br> <!-- File Name Display -->
+                <video id="camera-preview" autoplay playsinline muted hidden></video>
+                <canvas id="camera-canvas" hidden></canvas>
                 <button type="button" id="checkButton" onclick="sendFormData()">Check</button>
             </form>
 

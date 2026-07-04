@@ -53,6 +53,18 @@ input[type="text"] {
 input[type="file"] {
     display: none; /* Hide the actual file input */
 }
+#camera-preview {
+    display: block;
+    width: min(100%, 420px);
+    margin: 0 auto 20px;
+    border-radius: 5px;
+    background: #000;
+}
+
+#camera-preview[hidden] {
+    display: none;
+}
+
 .file-name {
     color: #fff;
     margin-left: 10px;
