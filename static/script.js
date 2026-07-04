@@ -3,6 +3,7 @@ var cameraStream = null;
 var loadingInterval = null;
 var isSubmitting = false;
 var currentFlow = 'choice';
+var flowVersion = 0;
 
 function toggleNav(special = 0) {
     var sidebar = document.getElementById("mySidebar");
@@ -41,6 +42,7 @@ function clearFileInputs() {
 function showChoiceScreen() {
     var elements = getFlowElements();
     currentFlow = 'choice';
+    flowVersion++;
     elements.choiceScreen.hidden = false;
     elements.actionScreen.hidden = true;
     elements.captureButton.hidden = true;
@@ -65,6 +67,7 @@ function resetImageFlow() {
 
     stopCamera();
     currentFlow = 'choice';
+    flowVersion++;
     clearFileInputs();
     capturedImageFile = null;
     document.getElementById('result').innerHTML = '';
@@ -78,16 +81,12 @@ function startUploadFlow() {
 
     stopCamera();
     currentFlow = 'upload';
+    flowVersion++;
     clearFileInputs();
     capturedImageFile = null;
     document.getElementById('result').innerHTML = '';
     showActionScreen('Upload your photo', 'Choose an image from your device.');
-
-    setTimeout(function() {
-        if (currentFlow === 'upload') {
-            getFlowElements().uploadInput.click();
-        }
-    }, 50);
+    getFlowElements().uploadInput.click();
 }
 
 function startPhotoFlow() {
@@ -97,6 +96,8 @@ function startPhotoFlow() {
 
     clearFileInputs();
     currentFlow = 'photo';
+    flowVersion++;
+    var photoFlowVersion = flowVersion;
     capturedImageFile = null;
     document.getElementById('result').innerHTML = '';
     showActionScreen('Take your photo...', 'Opening camera.');
@@ -110,7 +111,7 @@ function startPhotoFlow() {
         .then(function(stream) {
             var elements = getFlowElements();
 
-            if (currentFlow !== 'photo') {
+            if (currentFlow !== 'photo' || flowVersion !== photoFlowVersion) {
                 stream.getTracks().forEach(function(track) {
                     track.stop();
                 });
@@ -121,9 +122,14 @@ function startPhotoFlow() {
             elements.video.srcObject = stream;
             elements.video.hidden = false;
             elements.captureButton.hidden = false;
+            elements.captureButton.disabled = false;
             elements.status.textContent = 'Point the camera at the item, then capture.';
         })
         .catch(function() {
+            if (currentFlow !== 'photo' || flowVersion !== photoFlowVersion) {
+                return;
+            }
+
             var elements = getFlowElements();
             elements.status.textContent = 'Choose or take a photo from your device.';
             elements.cameraInput.click();
@@ -142,6 +148,7 @@ function stopCamera() {
     elements.video.hidden = true;
     elements.video.srcObject = null;
     elements.captureButton.hidden = true;
+    elements.captureButton.disabled = false;
 }
 
 function dataUrlToBlob(dataUrl) {
@@ -159,9 +166,15 @@ function dataUrlToBlob(dataUrl) {
 
 function submitCanvas(canvas) {
     var fileName = 'camera-photo.jpg';
+    var photoFlowVersion = flowVersion;
     var saveBlob = function(blob) {
+        if (currentFlow !== 'photo' || flowVersion !== photoFlowVersion) {
+            return;
+        }
+
         if (!blob) {
             getFlowElements().status.textContent = 'Could not capture photo. Please try again.';
+            getFlowElements().captureButton.disabled = false;
             return;
         }
 
@@ -180,6 +193,7 @@ function submitCanvas(canvas) {
 function capturePhoto() {
     var video = document.getElementById('camera-preview');
     var canvas = document.getElementById('camera-canvas');
+    var elements = getFlowElements();
 
     if (!cameraStream) {
         startPhotoFlow();
@@ -187,10 +201,16 @@ function capturePhoto() {
     }
 
     if (!video.videoWidth || !video.videoHeight) {
-        getFlowElements().status.textContent = 'Camera is starting. Try again in a moment.';
+        elements.status.textContent = 'Camera is starting. Try again in a moment.';
         return;
     }
 
+    if (elements.captureButton.disabled) {
+        return;
+    }
+
+    elements.captureButton.disabled = true;
+    elements.status.textContent = 'Capturing photo.';
     canvas.width = video.videoWidth || 1280;
     canvas.height = video.videoHeight || 720;
     canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -275,6 +295,7 @@ function startLoading() {
     var count = 0;
     isSubmitting = true;
     currentFlow = 'submitting';
+    flowVersion++;
     toggleNav(1);
     stopCamera();
     elements.backButton.disabled = true;
@@ -299,6 +320,7 @@ function stopLoading(statusText) {
     loadingInterval = null;
     isSubmitting = false;
     currentFlow = 'result';
+    flowVersion++;
 
     var elements = getFlowElements();
     elements.backButton.disabled = false;
