@@ -161,6 +161,7 @@ function startPhotoFlow() {
             elements.captureButton.hidden = false;
             elements.captureButton.disabled = false;
             elements.status.textContent = 'Point the camera at the item, then capture.';
+            fitCameraToViewport();
         })
         .catch(function() {
             if (currentFlow !== 'photo' || flowVersion !== photoFlowVersion) {
@@ -171,6 +172,26 @@ function startPhotoFlow() {
             elements.status.textContent = 'Choose or take a photo from your device.';
             elements.cameraInput.click();
         });
+}
+
+// Size the live camera preview so the Capture Photo button always sits
+// directly below the feed AND stays within the viewport. Without this the
+// preview grows to its CSS max-height and pushes the button off-screen on
+// shorter devices, forcing the user to scroll to capture.
+function fitCameraToViewport() {
+    var elements = getFlowElements();
+    var video = elements.video;
+
+    if (video.hidden) {
+        return;
+    }
+
+    var videoTop = video.getBoundingClientRect().top;
+    // Room to keep below the feed for the capture button + a little breathing space.
+    var reserve = (elements.captureButton.offsetHeight || 56) + 48;
+    var available = window.innerHeight - videoTop - reserve;
+
+    video.style.maxHeight = Math.max(180, available) + 'px';
 }
 
 function stopCamera() {
@@ -184,6 +205,7 @@ function stopCamera() {
     var elements = getFlowElements();
     elements.video.hidden = true;
     elements.video.srcObject = null;
+    elements.video.style.maxHeight = '';
     elements.captureButton.hidden = true;
     elements.captureButton.disabled = false;
 }
