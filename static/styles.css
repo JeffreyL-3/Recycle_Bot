@@ -1,28 +1,36 @@
 
 body {
     display: flex;
-    flex-direction: column; /* Change to column for vertical layout */
-    align-items: center; /* Center align items */
-    justify-content: flex-start; /* Start content from the top */
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
     min-height: 100vh;
     margin: 0;
     background: #111;
     color: #fff;
     font-family: monospace;
 }
-h1 {
-    font-family: 'Aquire', sans-serif;
-    font-size: 60px
-}
-.container {
-    text-align: center;
-    width: 100%; /* Ensure container takes the rest of the space */
-    max-width: 800px; /* Set a maximum width for the container */
-    padding: 0 20px; /* Add horizontal padding */
-    margin: auto; /* Center the container */
+
+* {
+    box-sizing: border-box;
 }
 
-button, input[type="text"], input[type="submit"], label.custom-file-upload {
+h1 {
+    font-family: 'Aquire', sans-serif;
+    font-size: 60px;
+    letter-spacing: 0;
+    margin: 0 0 32px;
+}
+
+.container {
+    text-align: center;
+    width: 100%;
+    max-width: 800px;
+    padding: 96px 20px 40px;
+    margin: auto;
+}
+
+button, input[type="text"], input[type="submit"] {
     background: #333;
     color: #fff;
     border: none;
@@ -30,48 +38,86 @@ button, input[type="text"], input[type="submit"], label.custom-file-upload {
     margin: 5px;
     font-family: monospace;
     border-radius: 5px;
-    cursor: pointer; /* Add cursor style */
+    cursor: pointer;
     display: inline-block;
 }
 
-label.custom-file-upload:hover {
-    background-color: #444; /* Slightly darker background on hover */
-    box-shadow: 0 0 5px rgba(255, 255, 255, 0.1); /* More subtle glow */
-    transition: background-color 0.1s, box-shadow 0.1s; /* Smooth transition for the hover effect */
+button:disabled {
+    cursor: default;
+    opacity: 0.55;
 }
 
-button:hover {
-    background-color: #444; /* Slightly darker background on hover */
-    box-shadow: 0 0 5px rgba(255, 255, 255, 0.1); /* More subtle glow */
-    transition: background-color 0.1s, box-shadow 0.1s; /* Smooth transition for the hover effect */
+button:not(:disabled):hover {
+    background-color: #444;
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.1);
+    transition: background-color 0.1s, box-shadow 0.1s;
 }
 
+[hidden] {
+    display: none !important;
+}
 
 input[type="text"] {
     width: 300px;
 }
-input[type="file"] {
-    display: none; /* Hide the actual file input */
-}
-#camera-preview {
-    display: block;
-    width: min(100%, 420px);
-    margin: 0 auto 20px;
-    border-radius: 5px;
-    background: #000;
-}
 
-#camera-preview[hidden] {
+input[type="file"] {
     display: none;
 }
 
-.file-name {
-    color: #fff;
-    margin-left: 10px;
-    font-family: monospace;
+.choice-screen {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(160px, 1fr));
+    gap: 14px;
+    width: min(100%, 480px);
+    margin: 0 auto;
 }
+
+.action-screen {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    min-height: 260px;
+    width: min(100%, 520px);
+    margin: 0 auto;
+}
+
+.primary-action {
+    min-height: 56px;
+    min-width: 180px;
+    padding: 16px 22px;
+    font-size: 17px;
+}
+
+.back-button {
+    align-self: flex-start;
+    min-width: 86px;
+}
+
+.flow-instruction {
+    font-size: 24px;
+    line-height: 1.3;
+    margin: 28px 0 8px;
+}
+
+.flow-status {
+    min-height: 24px;
+    margin: 0 0 20px;
+    color: #cfd8d0;
+}
+
+#camera-preview {
+    display: block;
+    width: min(100%, 420px);
+    max-height: 52vh;
+    margin: 0 auto 20px;
+    border-radius: 5px;
+    background: #000;
+    object-fit: cover;
+}
+
 .sidebar {
-    width: 300px; /* Specific width */
+    width: 300px;
     height: 320px;
     position: fixed;
     z-index: 1;
@@ -80,8 +126,8 @@ input[type="file"] {
     overflow-x: hidden;
     transition: 0.8s;
     padding-top: 20px;
-    left: 15%; /* Center horizontally */
-    transform: translateX(-50%); /* Adjust for centering */
+    left: 15%;
+    transform: translateX(-50%);
 }
 
 .sidebar input[type="text"] {
@@ -98,31 +144,52 @@ input[type="file"] {
     font-family: monospace;
     border-radius: 5px;
     margin: 5px;
-    position: fixed; /* Use fixed to keep it above other elements */
+    position: fixed;
     top: 20px;
-    left: 30px; /* Adjust position as necessary */
-    z-index: 2; /* Ensure it's above other elements */
+    left: 30px;
+    z-index: 2;
 }
 
 .hamburger:hover {
-    background-color: #444; /* Slightly darker background on hover */
-    box-shadow: 0 0 5px rgba(255, 255, 255, 0.1); /* More subtle glow */
-    transition: background-color 0.1s, box-shadow 0.1s; /* Smooth transition for the hover effect */
+    background-color: #444;
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.1);
+    transition: background-color 0.1s, box-shadow 0.1s;
 }
 
 .flex-container {
     display: flex;
     width: 100%;
-    justify-content: center; /* Center the content */
-    padding-top: 60px; /* Adjust padding to avoid overlap with the hamburger menu */
+    justify-content: center;
+    padding-top: 60px;
 }
+
 #responseHeader {
     font-size: 20px;
     padding-top: 10px;
-    /* Add other styling as needed */
 }
 
 #responseDetails {
     padding-top: 20px;
-    /* Style for response details if needed */
+}
+
+@media (max-width: 600px) {
+    h1 {
+        font-size: 42px;
+    }
+
+    .container {
+        padding-top: 112px;
+    }
+
+    .choice-screen {
+        grid-template-columns: 1fr;
+    }
+
+    .primary-action {
+        width: 100%;
+    }
+
+    .sidebar {
+        left: 50%;
+    }
 }

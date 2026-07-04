@@ -1,6 +1,8 @@
 <!doctype html>
 <html>
     <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
         <link href="https://fonts.cdnfonts.com/css/aquire" rel="stylesheet">
         <link href="https://fonts.cdnfonts.com/css/motiva-sans" rel="stylesheet">
         <link rel="shortcut icon" type="image/x-icon" href="static/favicon.png">
@@ -30,17 +32,23 @@
         <div class="container">
             <h1>Recycle_Bot</h1>
 
-            <!-- Moved upload and check button here -->
-            <form action="/" method="post" enctype="multipart/form-data">
-                <label for="image" class="custom-file-upload">Upload Image</label>
-                <input type="file" name="image" id="image" required onchange="updateFileName()">
+            <form id="image-form" action="/" method="post" enctype="multipart/form-data">
+                <div id="choice-screen" class="choice-screen">
+                    <button type="button" class="primary-action" onclick="startPhotoFlow()">Take Photo</button>
+                    <button type="button" class="primary-action" onclick="startUploadFlow()">Upload Image</button>
+                </div>
+
+                <div id="action-screen" class="action-screen" hidden>
+                    <button type="button" id="backButton" class="back-button" onclick="resetImageFlow()">Back</button>
+                    <p id="flow-instruction" class="flow-instruction"></p>
+                    <p id="flow-status" class="flow-status"></p>
+                    <video id="camera-preview" autoplay playsinline muted hidden></video>
+                    <button type="button" id="capturePhotoButton" class="primary-action" onclick="capturePhoto()" hidden>Capture Photo</button>
+                </div>
+
+                <input type="file" name="image" id="image" accept="image/*" required onchange="handleUploadInput()">
                 <input type="file" id="camera-image" accept="image/*" capture="environment" onchange="useCameraInput()">
-                <button type="button" id="takePhotoButton" onclick="takePhoto()">Take Photo</button>
-                <button type="button" id="cancelCameraButton" onclick="stopCamera()" hidden>Cancel</button>
-                <span id="file-name" class="file-name"></span><br><br> <!-- File Name Display -->
-                <video id="camera-preview" autoplay playsinline muted hidden></video>
                 <canvas id="camera-canvas" hidden></canvas>
-                <button type="button" id="checkButton" onclick="sendFormData()">Check</button>
             </form>
 
             <div id="result"></div>
