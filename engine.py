@@ -1,5 +1,5 @@
-import key
 import base64
+import os
 import requests
 import json
 import defaults
@@ -46,15 +46,22 @@ def numTokens(response):
         total_tokens = prompt_tokens+completion_tokens
     else:
         # Default values if 'usage' key is not present
-        prompt_tokens, completion_tokens, total_tokens = -1, -1, -2
+        prompt_tokens, completion_tokens, total_tokens = 0, 0, 0
 
     return prompt_tokens, completion_tokens, total_tokens
 
 def getCost(prompt_tokens, completion_tokens):
     return (prompt_tokens*0.01/1000) + (completion_tokens*0.03/1000)
 
-# Gets recycling info 
-def query_recycling_info(image_path, town, state, object=defaults.getDefaultObject(), personality=defaults.getDefaultPersonality()):
+def get_openai_api_key(user_api_key=None):
+    user_api_key = (user_api_key or "").strip()
+    if user_api_key:
+        return user_api_key
+
+    return os.environ.get("OPENAI_API_KEY", "").strip()
+
+# Gets recycling info
+def query_recycling_info(image_path, town, state, object=defaults.getDefaultObject(), personality=defaults.getDefaultPersonality(), api_key=None):
     
     # Final check to force default on empty strings
     if(object==''):
@@ -64,8 +71,9 @@ def query_recycling_info(image_path, town, state, object=defaults.getDefaultObje
     
     print('Loading...')
     print(personality)
-    # OpenAI API Key
-    api_key = key.getKey()
+    api_key = get_openai_api_key(api_key)
+    if not api_key:
+        return "Error code 12: OpenAI API key is not configured"
 
     # Combine town and state
     if(town != '' and state !=''):
@@ -136,6 +144,8 @@ def separate_answer_and_details(combined_response):
     textResponse = str(combined_response)
 
     if("Error code" in textResponse):
+        if "Error code 12" in textResponse:
+            return str(textResponse), "this", "Add OPENAI_API_KEY on Render, or enter your own API key in the optional field."
         return str(textResponse), "this", "This is probably because you took a photo of something the program didn't expect."
 
     try:
@@ -153,6 +163,9 @@ def separate_answer_and_details(combined_response):
     return answer, object, details
 
 def extract_message(json_response):
+    if isinstance(json_response, str) and "Error code" in json_response:
+        return json_response
+
     # Navigate through the JSON structure to extract the message content
     # Assuming 'json_response' is the JSON object you provided
     if not isinstance(json_response, dict):

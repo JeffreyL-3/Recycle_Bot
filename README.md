@@ -4,7 +4,10 @@ Learn how to recycle anything! Upload an image, add your location and silly pers
 Note: using a .jpg or .png image is recommended. Limited file conversion is implemented, but not all file types are supported.
 
 ## Setup
-- Generate an OpenAI api key for use with Recycle_Bot
+- Configure an OpenAI API key for Recycle_Bot.
+  - For local development, set `OPENAI_API_KEY` in your shell environment or enter a key in the app UI.
+  - For Render, add `OPENAI_API_KEY` as an environment variable on the web service and redeploy.
+  - Users can still enter their own optional key in the UI; if they leave it blank, the server-side key is used.
 - Setup a virtual environment
   - Windows: run ```python -m venv openai-env``` in the main directory
   - Mac: run ```python3 -m venv openai-env``` in the main directory
@@ -26,8 +29,9 @@ Note: using a .jpg or .png image is recommended. Limited file conversion is impl
 - Vision API token optimization to ~300 per check
 
 ### Quality of Life Upgrades
-- Saves API key and settings for future use
-- GUI input for API key
+- Optional GUI input for users who want to bring their own API key
+- Uses a server-side `OPENAI_API_KEY` environment variable when no user key is provided
+- Saves optional API key and settings for future use
 - Support for .jpg and .png images, with limited support for converting other file types
 - Popup sidebar menu for settings input
 

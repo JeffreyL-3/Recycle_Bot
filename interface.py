@@ -2,8 +2,8 @@ import engine
 import defaults
 
 
-def simple_output(image_path, town, state, object, personality):
-    answer, object, details, prompt_tokens, completion_tokens, total_tokens = recycle_check(image_path, town, state, object, personality)
+def simple_output(image_path, town, state, object, personality, api_key=None):
+    answer, object, details, prompt_tokens, completion_tokens, total_tokens = recycle_check(image_path, town, state, object, personality, api_key)
     return to_text(answer, object, details, prompt_tokens, completion_tokens, total_tokens)
 
 
@@ -11,7 +11,10 @@ def to_text(answer, object, details, prompt_tokens=0, completion_tokens=0, total
     header = ""
     result_code = -1
     
-    #Result Code: 0 = no, 1 = maybe, 2 = yes       
+    #Result Code: 0 = no, 1 = maybe, 2 = yes
+
+    if answer.startswith("Error code"):
+        return (result_code, object, answer, details)
 
     if "but" in answer:
         header += ("Is this " + object + " recyclable? " + answer + "\n")
@@ -41,9 +44,9 @@ def to_text(answer, object, details, prompt_tokens=0, completion_tokens=0, total
 
         
 
-def recycle_check(image_path, town="", state="", object=defaults.getDefaultObject(), personality=defaults.getDefaultPersonality()):
-        
-    raw_response= engine.query_recycling_info(image_path, town, state, object, personality)
+def recycle_check(image_path, town="", state="", object=defaults.getDefaultObject(), personality=defaults.getDefaultPersonality(), api_key=None):
+
+    raw_response= engine.query_recycling_info(image_path, town, state, object, personality, api_key)
     print("Recycle_check: " + str(raw_response))
     message = engine.extract_message(raw_response)
     answer, object, details = engine.separate_answer_and_details(message)

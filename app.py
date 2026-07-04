@@ -2,7 +2,6 @@ from flask import Flask, request, render_template, redirect, url_for, jsonify
 from werkzeug.utils import secure_filename
 import os
 from interface import simple_output
-import key
 import shutil
 import defaults
 import time
@@ -48,16 +47,15 @@ def process():
         file.save(image_path)
 
         # Get other form data
-        
-        api_key = request.form.get('api_key')
-        key.setKey(api_key)
-                   
+
+        api_key = request.form.get('api_key', '').strip()
+
         town = request.form.get('town', '')
         state = request.form.get('state', '')
         object = request.form.get('object', defaults.getDefaultObject())
         personality = request.form.get('personality', defaults.getDefaultPersonality())
 
-        result_code, detected_object, header, details, *costOutput = simple_output(image_path, town, state, object, personality)
+        result_code, detected_object, header, details, *costOutput = simple_output(image_path, town, state, object, personality, api_key)
         
         end = time.time()
         timeTaken= end - start
