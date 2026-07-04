@@ -125,14 +125,14 @@ input[type="file"] {
     background-color: #111;
     overflow-x: hidden;
     transition: 0.8s;
-    padding-top: 20px;
+    padding: 20px 20px 0;
     left: 15%;
     transform: translateX(-50%);
 }
 
 .sidebar input[type="text"] {
-    width: 80%;
-    margin-bottom: 20px;        
+    width: 100%;
+    margin: 0 0 20px;
 }
 
 .hamburger {
