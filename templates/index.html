@@ -13,9 +13,12 @@
     </head>
     <body>
 
-        <div class="hamburger" onclick="toggleNav()">☰</div>
-        <button style="position: fixed; top: 20px; left: 100px; z-index: 2;" onclick="clearData()">Clear Data</button>
-        <div id="clearedBanner" style="display: none; position: fixed; top: 25px; left: 270px; z-index: 2; background-color: #393; color: white; padding: 10px; border-radius: 5px;">Cleared!</div>
+        <div class="top-bar">
+            <button type="button" class="hamburger" onclick="toggleNav()" aria-label="Toggle settings">☰</button>
+            <button type="button" onclick="clearData()">Clear Data</button>
+            <button type="button" id="locationButton" onclick="useDeviceLocation()">Use Location</button>
+            <span id="topBarStatus" class="top-bar-status" aria-live="polite"></span>
+        </div>
 
         <div class="flex-container">
             <div class="sidebar" id="mySidebar">

@@ -53,6 +53,36 @@ button:not(:disabled):hover {
     transition: background-color 0.1s, box-shadow 0.1s;
 }
 
+.top-bar {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    left: 30px;
+    max-width: calc(100vw - 50px);
+    position: fixed;
+    top: 20px;
+    z-index: 2;
+}
+
+.top-bar button {
+    margin: 0;
+}
+
+.top-bar-status {
+    color: #cfd8d0;
+    line-height: 1.3;
+    min-height: 18px;
+}
+
+.top-bar-status-success {
+    color: #8ee08e;
+}
+
+.top-bar-status-error {
+    color: #ffb1a8;
+}
+
 [hidden] {
     display: none !important;
 }
@@ -143,11 +173,6 @@ input[type="file"] {
     color: #fff;
     font-family: monospace;
     border-radius: 5px;
-    margin: 5px;
-    position: fixed;
-    top: 20px;
-    left: 30px;
-    z-index: 2;
 }
 
 .hamburger:hover {
@@ -175,7 +200,7 @@ input[type="file"] {
 @media (max-width: 600px) {
     /* Reserve the flyout's height at the bottom so the centered UI is
        pushed up above the open menu. The container's padding-top still
-       keeps it clear of the top bar (hamburger + Clear Data). */
+       keeps it clear of the top bar controls. */
     body {
         padding-bottom: 320px;
     }
@@ -186,6 +211,16 @@ input[type="file"] {
 
     .container {
         padding-top: 112px;
+    }
+
+    .top-bar {
+        left: 12px;
+        max-width: calc(100vw - 24px);
+        top: 12px;
+    }
+
+    .top-bar-status {
+        flex-basis: 100%;
     }
 
     .choice-screen {

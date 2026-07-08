@@ -4,6 +4,7 @@ var loadingInterval = null;
 var isSubmitting = false;
 var currentFlow = 'choice';
 var flowVersion = 0;
+var topBarStatusTimer = null;
 
 function toggleNav(special = 0) {
     var sidebar = document.getElementById("mySidebar");
@@ -22,7 +23,7 @@ function toggleNav(special = 0) {
 // On small screens the flyout menu is pinned to the bottom of the viewport and
 // can cover the centered UI. This runs ONCE on load (while the flyout is open)
 // to lift the whole UI up just enough to clear the flyout -- but never so far
-// that it slides under the top bar (hamburger / Clear Data). The resulting
+// that it slides under the top bar (hamburger / Clear Data / Use Location). The resulting
 // position is then locked in: it does not react to flyout toggles or resizing.
 function lockLayoutForFlyout() {
     var container = document.querySelector('.container');
@@ -34,7 +35,8 @@ function lockLayoutForFlyout() {
     }
 
     var gap = 16;                 // breathing room between UI and flyout
-    var topBarBottom = 72;        // space reserved for the fixed top bar
+    var topBar = document.querySelector('.top-bar');
+    var topBarBottom = topBar ? topBar.getBoundingClientRect().bottom + 12 : 72;
     var flyoutTop = window.innerHeight - sidebar.offsetHeight;
     var containerRect = container.getBoundingClientRect();
 
@@ -310,6 +312,113 @@ function useCameraInput() {
     sendFormData(input.files[0], input.files[0].name);
 }
 
+function setTopBarStatus(message, statusType, autoClear) {
+    var status = document.getElementById('topBarStatus');
+    if (!status) {
+        return;
+    }
+
+    clearTimeout(topBarStatusTimer);
+    status.textContent = message || '';
+    status.className = 'top-bar-status';
+
+    if (statusType) {
+        status.className += ' top-bar-status-' + statusType;
+    }
+
+    if (message && autoClear !== false) {
+        topBarStatusTimer = setTimeout(function() {
+            status.textContent = '';
+            status.className = 'top-bar-status';
+        }, 4000);
+    }
+}
+
+function setLocationButtonBusy(isBusy) {
+    var button = document.getElementById('locationButton');
+    if (!button) {
+        return;
+    }
+
+    button.disabled = isBusy;
+    button.textContent = isBusy ? 'Finding...' : 'Use Location';
+}
+
+function locationErrorMessage(error) {
+    if (error && error.code === error.PERMISSION_DENIED) {
+        return 'Location permission denied.';
+    }
+
+    return 'Location unavailable. Enter town and state manually.';
+}
+
+function fillLocationFields(town, state) {
+    document.getElementById('town').value = town;
+    document.getElementById('state').value = state;
+    saveSettings();
+}
+
+function reverseGeocodeLocation(latitude, longitude) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/reverse-geocode', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.onreadystatechange = function () {
+        if (this.readyState !== 4) {
+            return;
+        }
+
+        setLocationButtonBusy(false);
+
+        if (this.status === 200) {
+            try {
+                var response = JSON.parse(this.responseText);
+                if (response.town && response.state) {
+                    fillLocationFields(response.town, response.state);
+                    setTopBarStatus('Location filled.', 'success');
+                    return;
+                }
+            } catch (error) {
+                // Fall through to the shared lookup failure message.
+            }
+        }
+
+        setTopBarStatus('Location lookup failed. Enter town and state manually.', 'error');
+    };
+    xhr.onerror = function() {
+        setLocationButtonBusy(false);
+        setTopBarStatus('Location lookup failed. Enter town and state manually.', 'error');
+    };
+    xhr.send(JSON.stringify({
+        latitude: latitude,
+        longitude: longitude
+    }));
+}
+
+function useDeviceLocation() {
+    if (!navigator.geolocation) {
+        setTopBarStatus('Location unavailable. Enter town and state manually.', 'error');
+        return;
+    }
+
+    setLocationButtonBusy(true);
+    setTopBarStatus('Finding location...', '', false);
+
+    navigator.geolocation.getCurrentPosition(
+        function(position) {
+            reverseGeocodeLocation(position.coords.latitude, position.coords.longitude);
+        },
+        function(error) {
+            setLocationButtonBusy(false);
+            setTopBarStatus(locationErrorMessage(error), 'error');
+        },
+        {
+            enableHighAccuracy: false,
+            timeout: 10000,
+            maximumAge: 600000
+        }
+    );
+}
+
 function saveSettings() {
     localStorage.setItem('api_key', document.getElementById('api_key').value);
     localStorage.setItem('town', document.getElementById('town').value);
@@ -428,10 +537,5 @@ function clearData() {
     document.getElementById('state').value = '';
     document.getElementById('personality').value = '';
 
-    var banner = document.getElementById('clearedBanner');
-    banner.style.display = 'block';
-
-    setTimeout(function() {
-        banner.style.display = 'none';
-    }, 3000);
+    setTopBarStatus('Cleared.', 'success');
 }

@@ -8,6 +8,10 @@ Note: using a .jpg or .png image is recommended. Limited file conversion is impl
   - For local development, set `OPENAI_API_KEY` in your shell environment or enter a key in the app UI.
   - For Render, add `OPENAI_API_KEY` as an environment variable on the web service and redeploy.
   - Users can still enter their own optional key in the UI; if they leave it blank, the server-side key is used.
+- Configure a Google Maps API key for device location autofill.
+  - Enable the Google Geocoding API in Google Cloud.
+  - Set `GOOGLE_MAPS_API_KEY` in your local shell or Render environment variables.
+  - Restrict the key to the Geocoding API and set Google-side quota limits to control costs.
 - Setup a virtual environment
   - Windows: run ```python -m venv openai-env``` in the main directory
   - Mac: run ```python3 -m venv openai-env``` in the main directory
@@ -32,10 +36,12 @@ Note: using a .jpg or .png image is recommended. Limited file conversion is impl
 - Optional GUI input for users who want to bring their own API key
 - Uses a server-side `OPENAI_API_KEY` environment variable when no user key is provided
 - Saves optional API key and settings for future use
+- Autofills town and state from device location when `GOOGLE_MAPS_API_KEY` is configured
 - Support for .jpg and .png images, with limited support for converting other file types
 - Popup sidebar menu for settings input
 
 ### Security protections
-- Simple prompt protection against malicious injection attacks 
+- Simple prompt protection against malicious injection attacks
+- Rate-limited server-side geocoding proxy for device location lookup
 - Limited error handling
 - Debugging and cost quantification system enabling token and cost tracking (currently disabled to avoid UI clutter)
