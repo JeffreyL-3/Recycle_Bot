@@ -68,13 +68,14 @@ def get_openai_api_key(user_api_key=None):
     return os.environ.get("OPENAI_API_KEY", "").strip()
 
 # Gets recycling info
-def query_recycling_info(image_path, town, state, object=defaults.getDefaultObject(), personality=defaults.getDefaultPersonality(), api_key=None):
+def query_recycling_info(image_path, town, state, object=defaults.getDefaultObject(), personality=defaults.getDefaultPersonality(), api_key=None, model=defaults.getDefaultModel()):
     
     # Final check to force default on empty strings
     if(object==''):
         object = defaults.getDefaultObject()
     if(personality==''):
-        personality = defaults.getDefaultPersonality()  
+        personality = defaults.getDefaultPersonality()
+    model = defaults.getModel(model)
     
     print('Loading...')
     print(personality)
@@ -100,7 +101,7 @@ def query_recycling_info(image_path, town, state, object=defaults.getDefaultObje
     # Setup payload
     payload = {
         #Allows image uploads
-        "model": defaults.getDefaultModel(), 
+        "model": model,
         
         #Prompt
         "messages": [

@@ -438,6 +438,7 @@ function sendFormData(imageFile, fileName) {
     formData.append('object', document.getElementById('object').value);
     formData.append('personality', document.getElementById('personality').value);
     formData.append('api_key', document.getElementById('api_key').value);
+    formData.append('model', document.getElementById('modelPicker').value);
     saveSettings();
 
     var xhr = new XMLHttpRequest();

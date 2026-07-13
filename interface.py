@@ -2,8 +2,8 @@ import engine
 import defaults
 
 
-def simple_output(image_path, town, state, object, personality, api_key=None):
-    answer, object, details, prompt_tokens, completion_tokens, total_tokens = recycle_check(image_path, town, state, object, personality, api_key)
+def simple_output(image_path, town, state, object, personality, api_key=None, model=defaults.getDefaultModel()):
+    answer, object, details, prompt_tokens, completion_tokens, total_tokens = recycle_check(image_path, town, state, object, personality, api_key, model)
     return to_text(answer, object, details, prompt_tokens, completion_tokens, total_tokens)
 
 
@@ -44,9 +44,9 @@ def to_text(answer, object, details, prompt_tokens=0, completion_tokens=0, total
 
         
 
-def recycle_check(image_path, town="", state="", object=defaults.getDefaultObject(), personality=defaults.getDefaultPersonality(), api_key=None):
+def recycle_check(image_path, town="", state="", object=defaults.getDefaultObject(), personality=defaults.getDefaultPersonality(), api_key=None, model=defaults.getDefaultModel()):
 
-    raw_response= engine.query_recycling_info(image_path, town, state, object, personality, api_key)
+    raw_response= engine.query_recycling_info(image_path, town, state, object, personality, api_key, model)
     print("Recycle_check: " + str(raw_response))
     message = engine.extract_message(raw_response)
     answer, object, details = engine.separate_answer_and_details(message)

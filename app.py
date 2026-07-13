@@ -172,8 +172,9 @@ def process():
         state = request.form.get('state', '')
         object = request.form.get('object', defaults.getDefaultObject())
         personality = request.form.get('personality', defaults.getDefaultPersonality())
+        model = defaults.getModel(request.form.get('model'))
 
-        result_code, detected_object, header, details, *costOutput = simple_output(image_path, town, state, object, personality, api_key)
+        result_code, detected_object, header, details, *costOutput = simple_output(image_path, town, state, object, personality, api_key, model)
         
         end = time.time()
         timeTaken= end - start

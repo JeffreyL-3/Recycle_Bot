@@ -15,6 +15,12 @@
 
         <div class="top-bar">
             <button type="button" class="hamburger" onclick="toggleNav()" aria-label="Toggle settings">☰</button>
+            <div class="model-picker">
+                <label class="visually-hidden" for="modelPicker">Model</label>
+                <select id="modelPicker" name="model" form="image-form" aria-label="Model">
+                    <option value="gpt-4o">4o</option>
+                </select>
+            </div>
             <button type="button" onclick="clearData()">Clear Data</button>
             <button type="button" id="locationButton" onclick="useDeviceLocation()">Use Location</button>
             <span id="topBarStatus" class="top-bar-status" aria-live="polite"></span>
