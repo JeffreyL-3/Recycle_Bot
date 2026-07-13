@@ -23,7 +23,7 @@ function toggleNav(special = 0) {
 // On small screens the flyout menu is pinned to the bottom of the viewport and
 // can cover the centered UI. This runs ONCE on load (while the flyout is open)
 // to lift the whole UI up just enough to clear the flyout -- but never so far
-// that it slides under the top bar (hamburger / Clear Data / Use Location). The resulting
+// that it slides under the top bar (hamburger / model / Use Location). The resulting
 // position is then locked in: it does not react to flyout toggles or resizing.
 function lockLayoutForFlyout() {
     var container = document.querySelector('.container');
@@ -426,6 +426,14 @@ function saveSettings() {
     localStorage.setItem('personality', document.getElementById('personality').value);
 }
 
+function enableSettingsPersistence() {
+    ['api_key', 'town', 'state', 'personality'].forEach(function(fieldId) {
+        document.getElementById(fieldId).addEventListener('input', function(event) {
+            localStorage.setItem(fieldId, event.target.value);
+        });
+    });
+}
+
 function sendFormData(imageFile, fileName) {
     if (!imageFile || isSubmitting) {
         return;
@@ -499,22 +507,22 @@ function stopLoading(statusText) {
 
 function retrieveLocalStorageData() {
     var apiKey = localStorage.getItem('api_key');
-    if (apiKey) {
+    if (apiKey !== null) {
         document.getElementById('api_key').value = apiKey;
     }
 
     var town = localStorage.getItem('town');
-    if (town) {
+    if (town !== null) {
         document.getElementById('town').value = town;
     }
 
     var state = localStorage.getItem('state');
-    if (state) {
+    if (state !== null) {
         document.getElementById('state').value = state;
     }
 
     var personality = localStorage.getItem('personality');
-    if (personality) {
+    if (personality !== null) {
         document.getElementById('personality').value = personality;
     }
 }
@@ -524,19 +532,6 @@ window.onload = function() {
     sidebar.style.bottom = "0px";
     showChoiceScreen();
     retrieveLocalStorageData();
+    enableSettingsPersistence();
     lockLayoutForFlyout();
 };
-
-function clearData() {
-    localStorage.removeItem('api_key');
-    localStorage.removeItem('town');
-    localStorage.removeItem('state');
-    localStorage.removeItem('personality');
-
-    document.getElementById('api_key').value = '';
-    document.getElementById('town').value = '';
-    document.getElementById('state').value = '';
-    document.getElementById('personality').value = '';
-
-    setTopBarStatus('Cleared.', 'success');
-}

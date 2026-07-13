@@ -35,7 +35,7 @@ Note: using a .jpg or .png image is recommended. Limited file conversion is impl
 ### Quality of Life Upgrades
 - Optional GUI input for users who want to bring their own API key
 - Uses a server-side `OPENAI_API_KEY` environment variable when no user key is provided
-- Saves optional API key and settings for future use
+- Saves the optional API key, town, state, and personality in browser-local storage as they are edited; delete a field's value to clear it
 - Autofills town and state from device location when `GOOGLE_MAPS_API_KEY` is configured
 - Support for .jpg and .png images, with limited support for converting other file types
 - Popup sidebar menu for settings input
