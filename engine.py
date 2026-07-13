@@ -4,6 +4,9 @@ import requests
 import json
 import defaults
 
+GPT_4O_INPUT_COST_PER_MILLION = 2.50
+GPT_4O_OUTPUT_COST_PER_MILLION = 10.00
+
 RECYCLING_RESPONSE_FORMAT = {
     "type": "json_schema",
     "json_schema": {
@@ -51,7 +54,11 @@ def numTokens(response):
     return prompt_tokens, completion_tokens, total_tokens
 
 def getCost(prompt_tokens, completion_tokens):
-    return (prompt_tokens*0.01/1000) + (completion_tokens*0.03/1000)
+    """Return the standard GPT-4o token cost, excluding cached-input discounts."""
+    return (
+        prompt_tokens * GPT_4O_INPUT_COST_PER_MILLION / 1_000_000
+        + completion_tokens * GPT_4O_OUTPUT_COST_PER_MILLION / 1_000_000
+    )
 
 def get_openai_api_key(user_api_key=None):
     user_api_key = (user_api_key or "").strip()
@@ -121,7 +128,7 @@ def query_recycling_info(image_path, town, state, object=defaults.getDefaultObje
             }
         ],
         "response_format": RECYCLING_RESPONSE_FORMAT,
-        #Hard cap on token usage (near impossible to reach). About $0.01 - $0.03
+        # Output cap costs up to $0.01 at standard GPT-4o rates; input is billed separately.
         "max_tokens": 1000
     }
 
