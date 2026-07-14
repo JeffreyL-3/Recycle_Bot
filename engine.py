@@ -4,8 +4,10 @@ import requests
 import json
 import defaults
 
-GPT_4O_INPUT_COST_PER_MILLION = 2.50
-GPT_4O_OUTPUT_COST_PER_MILLION = 10.00
+MODEL_TOKEN_COSTS_PER_MILLION = {
+    "gpt-4o": (2.50, 10.00),
+    "gpt-5.6-luna": (1.00, 6.00),
+}
 
 RECYCLING_RESPONSE_FORMAT = {
     "type": "json_schema",
@@ -39,6 +41,22 @@ RECYCLING_RESPONSE_FORMAT = {
 def encode_image(image_path):
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode('utf-8')
+
+def get_image_media_type(image_path):
+    """Detect an OpenAI-supported image type from the file signature."""
+    with open(image_path, "rb") as image_file:
+        header = image_file.read(12)
+
+    if header.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if header.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if header.startswith((b"GIF87a", b"GIF89a")):
+        return "image/gif"
+    if header.startswith(b"RIFF") and header[8:12] == b"WEBP":
+        return "image/webp"
+
+    raise ValueError("Unsupported image format")
     
 def numTokens(response):
     # Check if the response has 'usage' key
@@ -53,11 +71,13 @@ def numTokens(response):
 
     return prompt_tokens, completion_tokens, total_tokens
 
-def getCost(prompt_tokens, completion_tokens):
-    """Return the standard GPT-4o token cost, excluding cached-input discounts."""
+def getCost(prompt_tokens, completion_tokens, model=defaults.getDefaultModel()):
+    """Return token cost for a supported model, excluding cached-input discounts."""
+    model = defaults.getModel(model)
+    input_cost, output_cost = MODEL_TOKEN_COSTS_PER_MILLION[model]
     return (
-        prompt_tokens * GPT_4O_INPUT_COST_PER_MILLION / 1_000_000
-        + completion_tokens * GPT_4O_OUTPUT_COST_PER_MILLION / 1_000_000
+        prompt_tokens * input_cost / 1_000_000
+        + completion_tokens * output_cost / 1_000_000
     )
 
 def get_openai_api_key(user_api_key=None):
@@ -89,8 +109,12 @@ def query_recycling_info(image_path, town, state, object=defaults.getDefaultObje
     else:
         combinedLocation=''
 
-    # Getting the base64 string
-    base64_image = encode_image(image_path)
+    # Build a data URL whose media type matches the uploaded image bytes.
+    try:
+        image_media_type = get_image_media_type(image_path)
+        base64_image = encode_image(image_path)
+    except (OSError, ValueError):
+        return "Error code 13: Unsupported image format"
 
     # Setup headers
     headers = {
@@ -119,7 +143,7 @@ def query_recycling_info(image_path, town, state, object=defaults.getDefaultObje
                     {
                         "type": "image_url",
                         "image_url": {
-                            "url": f"data:image/jpeg;base64,{base64_image}",
+                            "url": f"data:{image_media_type};base64,{base64_image}",
                             
                             #Compresses image to optimize token usage
                             "detail":"low"
@@ -129,12 +153,22 @@ def query_recycling_info(image_path, town, state, object=defaults.getDefaultObje
             }
         ],
         "response_format": RECYCLING_RESPONSE_FORMAT,
-        # Output cap costs up to $0.01 at standard GPT-4o rates; input is billed separately.
-        "max_tokens": 1000
+        "max_completion_tokens": 4000 if model == "gpt-5.6-luna" else 1000
     }
 
+    if model == "gpt-5.6-luna":
+        payload["reasoning_effort"] = "low"
+
     # Send request
-    response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+    try:
+        response = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers=headers,
+            json=payload,
+            timeout=60
+        )
+    except requests.RequestException:
+        return "Error code 11: Error in API call"
 
     # Process response
     if response.status_code == 200:
@@ -142,7 +176,7 @@ def query_recycling_info(image_path, town, state, object=defaults.getDefaultObje
         return raw_response
 
     else:
-        print(str(response))
+        print("OpenAI API error: " + str(response.status_code))
         return "Error code 11: Error in API call"
     
 # Parses the structured JSON response. Expects answer, object, and details.

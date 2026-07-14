@@ -4,10 +4,10 @@ import defaults
 
 def simple_output(image_path, town, state, object, personality, api_key=None, model=defaults.getDefaultModel()):
     answer, object, details, prompt_tokens, completion_tokens, total_tokens = recycle_check(image_path, town, state, object, personality, api_key, model)
-    return to_text(answer, object, details, prompt_tokens, completion_tokens, total_tokens)
+    return to_text(answer, object, details, prompt_tokens, completion_tokens, total_tokens, model)
 
 
-def to_text(answer, object, details, prompt_tokens=0, completion_tokens=0, total_tokens=0):
+def to_text(answer, object, details, prompt_tokens=0, completion_tokens=0, total_tokens=0, model=defaults.getDefaultModel()):
     header = ""
     result_code = -1
     
@@ -31,9 +31,9 @@ def to_text(answer, object, details, prompt_tokens=0, completion_tokens=0, total
     ###
     
     wantCost = prompt_tokens!=0 and completion_tokens!=0 and total_tokens!=0
-    
+
     if wantCost:
-        totalCost = engine.getCost(prompt_tokens, completion_tokens)
+        totalCost = engine.getCost(prompt_tokens, completion_tokens, model)
         costOutput = ("Prompt tokens: " + str(prompt_tokens) + ". " "Completion tokens: " + str(completion_tokens) + ". " "Total tokens: " + str(total_tokens) + ". Total cost: $" + str(totalCost))
 
     return_tuple = (result_code, object, header, details)

@@ -1,7 +1,7 @@
 # Recycle_Bot
 Learn how to recycle anything! Upload an image, add your location and silly personality, and get a response straight from GPT.
 
-Note: using a .jpg or .png image is recommended. Limited file conversion is implemented, but not all file types are supported.
+Supported image uploads are JPEG, PNG, WebP, and non-animated GIF.
 
 ## Setup
 - Configure an OpenAI API key for Recycle_Bot.
@@ -23,8 +23,8 @@ Note: using a .jpg or .png image is recommended. Limited file conversion is impl
 - Run app.py to load Recycle_Bot!
 ## Recycle_Bot Features
 ### Basic Functions
-- Upload images and receive realtime responses from GPT-4o
-  - Plug-in support for other models is available by editing defaults.py
+- Upload images and receive realtime responses from GPT-4o or GPT-5.6 Luna
+  - GPT-5.6 Luna uses low reasoning effort for a faster, lower-cost classification path
 - Adaptive location to tailor instructions to local recycling programs
 - Customizable personality with continued accuracy
 - Robust hand-crafted prompt, keeping responses concise and helpful (even with absurd or malicious parameters)
@@ -37,7 +37,7 @@ Note: using a .jpg or .png image is recommended. Limited file conversion is impl
 - Uses a server-side `OPENAI_API_KEY` environment variable when no user key is provided
 - Saves the optional API key, town, state, and personality in browser-local storage as they are edited; delete a field's value to clear it
 - Autofills town and state from device location when `GOOGLE_MAPS_API_KEY` is configured
-- Support for .jpg and .png images, with limited support for converting other file types
+- Correctly encoded JPEG, PNG, WebP, and non-animated GIF image inputs
 - Popup sidebar menu for settings input
 
 ### Security protections

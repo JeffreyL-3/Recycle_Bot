@@ -1,7 +1,7 @@
 defaultObject = "object"
 defaultPersonality = "a recycling expert"
 defaultModel = "gpt-4o"
-supportedModels = {defaultModel}
+supportedModels = {defaultModel, "gpt-5.6-luna"}
 
 def getDefaultObject():
     return defaultObject
