@@ -1,47 +1,67 @@
 # Recycle_Bot
-Learn how to recycle anything! Upload an image, add your location and silly personality, and get a response straight from GPT.
 
-Supported image uploads are JPEG, PNG, WebP, and non-animated GIF.
+Recycle_Bot identifies an item from an uploaded image and provides location-aware recycling or disposal guidance.
+
+## Requirements
+
+- Python 3
+- A server-side `OPENAI_API_KEY`
+- An optional server-side `GOOGLE_MAPS_API_KEY` for device-location autofill
+
+API keys are read only from server environment variables. They are not rendered in the page, accepted from browser form data, or stored in browser-local storage.
 
 ## Setup
-- Configure an OpenAI API key for Recycle_Bot.
-  - For local development, set `OPENAI_API_KEY` in your shell environment or enter a key in the app UI.
-  - For Render, add `OPENAI_API_KEY` as an environment variable on the web service and redeploy.
-  - Users can still enter their own optional key in the UI; if they leave it blank, the server-side key is used.
-- Configure a Google Maps API key for device location autofill.
-  - Enable the Google Geocoding API in Google Cloud.
-  - Set `GOOGLE_MAPS_API_KEY` in your local shell or Render environment variables.
-  - Restrict the key to the Geocoding API and set Google-side quota limits to control costs.
-- Setup a virtual environment
-  - Windows: run ```python -m venv openai-env``` in the main directory
-  - Mac: run ```python3 -m venv openai-env``` in the main directory
-- After you've created a virtual environment, activate it with one of the following
-  - Windows: ```openai-env\Scripts\activate```
-  - Mac: ```source openai-env/bin/activate```
-- Install dependencies
-  - Run ```pip install --upgrade -r requirements.txt```
-- Run app.py to load Recycle_Bot!
-## Recycle_Bot Features
-### Basic Functions
-- Upload images and receive realtime responses from GPT-4o or GPT-5.6 Luna
-  - GPT-5.6 Luna uses low reasoning effort for a faster, lower-cost classification path
-- Adaptive location to tailor instructions to local recycling programs
-- Customizable personality with continued accuracy
-- Robust hand-crafted prompt, keeping responses concise and helpful (even with absurd or malicious parameters)
-- Structured OpenAI API responses replace brittle bracket parsing for answer, object, and disposal details
-- Dynamic prompting template, avoiding hardcoded settings
-- Vision API token optimization to ~300 per check
 
-### Quality of Life Upgrades
-- Optional GUI input for users who want to bring their own API key
-- Uses a server-side `OPENAI_API_KEY` environment variable when no user key is provided
-- Saves the optional API key, town, state, and personality in browser-local storage as they are edited; delete a field's value to clear it
-- Autofills town and state from device location when `GOOGLE_MAPS_API_KEY` is configured
-- Correctly encoded JPEG, PNG, WebP, and non-animated GIF image inputs
-- Popup sidebar menu for settings input
+1. Create a virtual environment:
+   - Windows: `python -m venv openai-env`
+   - macOS/Linux: `python3 -m venv openai-env`
+2. Activate it:
+   - Windows: `openai-env\Scripts\activate`
+   - macOS/Linux: `source openai-env/bin/activate`
+3. Install dependencies: `pip install --upgrade -r requirements.txt`
+4. Set `OPENAI_API_KEY` in the server environment.
+5. Optionally set `GOOGLE_MAPS_API_KEY` and enable the Google Geocoding API.
+6. Run the application: `python app.py`
 
-### Security protections
-- Simple prompt protection against malicious injection attacks
-- Rate-limited server-side geocoding proxy for device location lookup
-- Limited error handling
-- Debugging and cost quantification system enabling token and cost tracking (currently disabled to avoid UI clutter)
+For Render, configure the environment variables on the web service and redeploy. Restrict the Google key to the Geocoding API and configure provider-side quotas.
+
+## Models and API compatibility
+
+The model picker supports:
+
+- `gpt-4o` (default)
+- `gpt-5.6-luna`, using `reasoning_effort: "low"`
+
+The application intentionally keeps the existing Chat Completions integration. Requests use Structured Outputs, `max_completion_tokens`, and Base64 data URLs whose media type is detected from the uploaded bytes. Supported image inputs are JPEG, PNG, WebP, and non-animated GIF. Unknown model values fall back to `gpt-4o`.
+
+Relevant OpenAI documentation:
+
+- [GPT-5.6 Luna](https://developers.openai.com/api/docs/models/gpt-5.6-luna)
+- [Chat Completions](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create)
+- [Images and vision](https://developers.openai.com/api/docs/guides/images-vision)
+- [API pricing](https://developers.openai.com/api/docs/pricing)
+
+The in-code cost estimate uses standard token rates and does not apply cached-input discounts, cache-write charges, regional uplifts, or alternate service-tier pricing.
+
+## Features
+
+- Upload an image or capture a photo
+- Choose GPT-4o or GPT-5.6 Luna
+- Add a town and state manually or through device-location autofill
+- Customize the response personality
+- Receive schema-validated answers, identified objects, and disposal instructions
+- Persist town, state, and personality locally in the browser
+- Reject unsupported image signatures before calling OpenAI
+- Rate-limit server-side reverse-geocoding requests
+
+## Verification
+
+Run the automated checks from the repository root:
+
+```bash
+openai-env/bin/python -m unittest discover -s tests -v
+openai-env/bin/python -m compileall -q app.py defaults.py engine.py interface.py tests
+node --check static/script.js
+```
+
+The tests mock OpenAI network requests; they validate request payloads without using a live API key or incurring API charges.

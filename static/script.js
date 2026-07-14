@@ -420,18 +420,31 @@ function useDeviceLocation() {
 }
 
 function saveSettings() {
-    localStorage.setItem('api_key', document.getElementById('api_key').value);
     localStorage.setItem('town', document.getElementById('town').value);
     localStorage.setItem('state', document.getElementById('state').value);
     localStorage.setItem('personality', document.getElementById('personality').value);
 }
 
 function enableSettingsPersistence() {
-    ['api_key', 'town', 'state', 'personality'].forEach(function(fieldId) {
+    ['town', 'state', 'personality'].forEach(function(fieldId) {
         document.getElementById(fieldId).addEventListener('input', function(event) {
             localStorage.setItem(fieldId, event.target.value);
         });
     });
+}
+
+function renderResult(header, details) {
+    var result = document.getElementById('result');
+    var headerElement = document.createElement('div');
+    var detailsElement = document.createElement('div');
+
+    result.textContent = '';
+    headerElement.id = 'responseHeader';
+    headerElement.textContent = header || '';
+    detailsElement.id = 'responseDetails';
+    detailsElement.textContent = details || '';
+    result.appendChild(headerElement);
+    result.appendChild(detailsElement);
 }
 
 function sendFormData(imageFile, fileName) {
@@ -445,7 +458,6 @@ function sendFormData(imageFile, fileName) {
     formData.append('state', document.getElementById('state').value);
     formData.append('object', document.getElementById('object').value);
     formData.append('personality', document.getElementById('personality').value);
-    formData.append('api_key', document.getElementById('api_key').value);
     formData.append('model', document.getElementById('modelPicker').value);
     saveSettings();
 
@@ -453,12 +465,19 @@ function sendFormData(imageFile, fileName) {
     xhr.open('POST', '/process', true);
     xhr.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 200) {
-            var response = JSON.parse(this.responseText);
-            document.getElementById('result').innerHTML = '<div id="responseHeader">' + response.header + '</div>' +
-                                                            '<div id="responseDetails">' + response.details + '</div>';
+            var response;
+            try {
+                response = JSON.parse(this.responseText);
+            } catch (error) {
+                document.getElementById('result').textContent = 'Unexpected server response. Please try again.';
+                stopLoading('Something went wrong.');
+                return;
+            }
+
+            renderResult(response.header, response.details);
             stopLoading('Ready for another photo.');
         } else if (this.readyState === 4) {
-            document.getElementById('result').innerHTML = 'Error loading results. Please try again.';
+            document.getElementById('result').textContent = 'Error loading results. Please try again.';
             stopLoading('Something went wrong.');
         }
     };
@@ -506,10 +525,8 @@ function stopLoading(statusText) {
 }
 
 function retrieveLocalStorageData() {
-    var apiKey = localStorage.getItem('api_key');
-    if (apiKey !== null) {
-        document.getElementById('api_key').value = apiKey;
-    }
+    // Remove values saved by older versions that allowed browser-provided API keys.
+    localStorage.removeItem('api_key');
 
     var town = localStorage.getItem('town');
     if (town !== null) {

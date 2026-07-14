@@ -172,8 +172,10 @@ def query_recycling_info(image_path, town, state, object=defaults.getDefaultObje
 
     # Process response
     if response.status_code == 200:
-        raw_response = response.json()
-        return raw_response
+        try:
+            return response.json()
+        except ValueError:
+            return "Error code 11: Error in API call"
 
     else:
         print("OpenAI API error: " + str(response.status_code))
@@ -187,7 +189,7 @@ def separate_answer_and_details(combined_response):
 
     if("Error code" in textResponse):
         if "Error code 12" in textResponse:
-            return str(textResponse), "this", "Add OPENAI_API_KEY on Render, or enter your own API key in the optional field."
+            return str(textResponse), "this", "Add OPENAI_API_KEY to the server environment and restart the service."
         return str(textResponse), "this", "This is probably because you took a photo of something the program didn't expect."
 
     try:

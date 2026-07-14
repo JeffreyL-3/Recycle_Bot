@@ -110,10 +110,43 @@ class EngineCompatibilityTests(unittest.TestCase):
         self.assertEqual(result, "Error code 13: Unsupported image format")
         post.assert_not_called()
 
+    @patch("engine.requests.post")
+    def test_request_failure_returns_api_error(self, post):
+        image_path = self.make_image(b"\xff\xd8\xff\xe0" + b"test-jpeg-data", ".jpg")
+        post.side_effect = engine.requests.RequestException("network unavailable")
+
+        result = engine.query_recycling_info(
+            image_path,
+            "",
+            "",
+            api_key="test-key",
+            model="gpt-5.6-luna"
+        )
+
+        self.assertEqual(result, "Error code 11: Error in API call")
+
+    @patch("engine.requests.post")
+    def test_invalid_success_response_returns_api_error(self, post):
+        image_path = self.make_image(b"\xff\xd8\xff\xe0" + b"test-jpeg-data", ".jpg")
+        response = Mock(status_code=200)
+        response.json.side_effect = ValueError("invalid JSON")
+        post.return_value = response
+
+        result = engine.query_recycling_info(
+            image_path,
+            "",
+            "",
+            api_key="test-key",
+            model="gpt-5.6-luna"
+        )
+
+        self.assertEqual(result, "Error code 11: Error in API call")
+
     def test_supported_model_selection_and_costs(self):
         self.assertEqual(defaults.getModel("gpt-5.6-luna"), "gpt-5.6-luna")
         self.assertEqual(defaults.getModel("unknown"), defaults.getDefaultModel())
         self.assertAlmostEqual(engine.getCost(1_000_000, 1_000_000, "gpt-5.6-luna"), 7.0)
+        self.assertAlmostEqual(engine.getCost(1_000_000, 1_000_000, "gpt-4o"), 12.5)
 
 
 if __name__ == "__main__":

@@ -158,7 +158,7 @@ def process():
     start = time.time()
     empty_folder(app.config['UPLOAD_FOLDER'])
 
-    file = request.files['image']
+    file = request.files.get('image')
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -166,15 +166,20 @@ def process():
 
         # Get other form data
 
-        api_key = request.form.get('api_key', '').strip()
-
         town = request.form.get('town', '')
         state = request.form.get('state', '')
         object = request.form.get('object', defaults.getDefaultObject())
         personality = request.form.get('personality', defaults.getDefaultPersonality())
         model = defaults.getModel(request.form.get('model'))
 
-        result_code, detected_object, header, details, *costOutput = simple_output(image_path, town, state, object, personality, api_key, model)
+        result_code, detected_object, header, details, *costOutput = simple_output(
+            image_path,
+            town,
+            state,
+            object,
+            personality,
+            model=model
+        )
         
         end = time.time()
         timeTaken= end - start
