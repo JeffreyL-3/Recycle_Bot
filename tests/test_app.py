@@ -23,7 +23,7 @@ class ProcessRouteTests(unittest.TestCase):
         self.client = app_module.app.test_client()
 
     @patch("app.simple_output")
-    def test_process_passes_luna_model_without_accepting_browser_key(self, simple_output):
+    def test_process_passes_browser_key_and_luna_model(self, simple_output):
         simple_output.return_value = (
             2,
             "bottle",
@@ -40,14 +40,17 @@ class ProcessRouteTests(unittest.TestCase):
                 "object": "bottle",
                 "personality": "friendly",
                 "model": "gpt-5.6-luna",
-                "api_key": "browser-key-must-be-ignored"
+                "api_key": "browser-key"
             },
             content_type="multipart/form-data"
         )
 
         self.assertEqual(response.status_code, 200)
         call = simple_output.call_args
-        self.assertEqual(call.args[1:], ("Boston", "MA", "bottle", "friendly"))
+        self.assertEqual(
+            call.args[1:],
+            ("Boston", "MA", "bottle", "friendly", "browser-key")
+        )
         self.assertEqual(call.kwargs, {"model": "gpt-5.6-luna"})
 
     @patch("app.simple_output")
@@ -74,6 +77,31 @@ class ProcessRouteTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.get_json(), {"error": "Invalid file format"})
+
+    @patch("engine.requests.post")
+    def test_process_reports_rejected_browser_key(self, post):
+        post.return_value.status_code = 401
+
+        response = self.client.post(
+            "/process",
+            data={
+                "image": (io.BytesIO(b"\xff\xd8\xff\xe0image"), "item.jpg"),
+                "api_key": "rejected-key"
+            },
+            content_type="multipart/form-data"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.get_json(),
+            {
+                "costOutput": None,
+                "details": "Your custom OpenAI API key was rejected. Update it, or clear the field to use the server key.",
+                "detected_object": "this",
+                "header": "Error code 14: custom OpenAI API key was rejected",
+                "result_code": -1
+            }
+        )
 
 
 if __name__ == "__main__":

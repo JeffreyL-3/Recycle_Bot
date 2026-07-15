@@ -5,10 +5,12 @@ Recycle_Bot identifies an item from an uploaded image and provides location-awar
 ## Requirements
 
 - Python 3
-- A server-side `OPENAI_API_KEY`
+- An OpenAI API key supplied through the app or a server-side `OPENAI_API_KEY`
 - An optional server-side `GOOGLE_MAPS_API_KEY` for device-location autofill
 
-API keys are read only from server environment variables. They are not rendered in the page, accepted from browser form data, or stored in browser-local storage.
+Users can enter an optional custom API key in the app. It is saved in browser-local storage and used for that browser's requests. If the field is empty, the application uses the server-side `OPENAI_API_KEY`.
+
+If OpenAI rejects a custom key with an authentication error, the app asks the user to update it or clear the field. It does not silently retry with the server key. After the custom field is cleared, subsequent requests use the server-side `OPENAI_API_KEY` when it is configured.
 
 ## Setup
 
@@ -19,7 +21,7 @@ API keys are read only from server environment variables. They are not rendered 
    - Windows: `openai-env\Scripts\activate`
    - macOS/Linux: `source openai-env/bin/activate`
 3. Install dependencies: `pip install --upgrade -r requirements.txt`
-4. Set `OPENAI_API_KEY` in the server environment.
+4. Set `OPENAI_API_KEY` in the server environment to provide the default key.
 5. Optionally set `GOOGLE_MAPS_API_KEY` and enable the Google Geocoding API.
 6. Run the application: `python app.py`
 
@@ -39,6 +41,7 @@ Relevant OpenAI documentation:
 - [GPT-5.6 Luna](https://developers.openai.com/api/docs/models/gpt-5.6-luna)
 - [Chat Completions](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create)
 - [Images and vision](https://developers.openai.com/api/docs/guides/images-vision)
+- [API error codes](https://developers.openai.com/api/docs/guides/error-codes#api-errors)
 - [API pricing](https://developers.openai.com/api/docs/pricing)
 
 The in-code cost estimate uses standard token rates and does not apply cached-input discounts, cache-write charges, regional uplifts, or alternate service-tier pricing.
@@ -50,7 +53,7 @@ The in-code cost estimate uses standard token rates and does not apply cached-in
 - Add a town and state manually or through device-location autofill
 - Customize the response personality
 - Receive schema-validated answers, identified objects, and disposal instructions
-- Persist town, state, and personality locally in the browser
+- Persist the optional custom API key, town, state, and personality locally in the browser
 - Reject unsupported image signatures before calling OpenAI
 - Rate-limit server-side reverse-geocoding requests
 

@@ -166,6 +166,8 @@ def process():
 
         # Get other form data
 
+        api_key = request.form.get('api_key', '').strip()
+
         town = request.form.get('town', '')
         state = request.form.get('state', '')
         object = request.form.get('object', defaults.getDefaultObject())
@@ -178,6 +180,7 @@ def process():
             state,
             object,
             personality,
+            api_key,
             model=model
         )
         

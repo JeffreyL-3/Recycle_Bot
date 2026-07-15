@@ -99,6 +99,7 @@ def query_recycling_info(image_path, town, state, object=defaults.getDefaultObje
     
     print('Loading...')
     print(personality)
+    using_custom_api_key = bool((api_key or "").strip())
     api_key = get_openai_api_key(api_key)
     if not api_key:
         return "Error code 12: OpenAI API key is not configured"
@@ -179,6 +180,9 @@ def query_recycling_info(image_path, town, state, object=defaults.getDefaultObje
 
     else:
         print("OpenAI API error: " + str(response.status_code))
+        if response.status_code == 401:
+            key_source = "custom" if using_custom_api_key else "server"
+            return "Error code 14: " + key_source + " OpenAI API key was rejected"
         return "Error code 11: Error in API call"
     
 # Parses the structured JSON response. Expects answer, object, and details.
@@ -189,7 +193,11 @@ def separate_answer_and_details(combined_response):
 
     if("Error code" in textResponse):
         if "Error code 12" in textResponse:
-            return str(textResponse), "this", "Add OPENAI_API_KEY to the server environment and restart the service."
+            return str(textResponse), "this", "Add OPENAI_API_KEY on Render, or enter your own API key in the optional field."
+        if "Error code 14" in textResponse:
+            if "custom OpenAI API key" in textResponse:
+                return str(textResponse), "this", "Your custom OpenAI API key was rejected. Update it, or clear the field to use the server key."
+            return str(textResponse), "this", "The server OPENAI_API_KEY was rejected. Check the server configuration."
         return str(textResponse), "this", "This is probably because you took a photo of something the program didn't expect."
 
     try:

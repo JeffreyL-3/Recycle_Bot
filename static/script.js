@@ -420,13 +420,14 @@ function useDeviceLocation() {
 }
 
 function saveSettings() {
+    localStorage.setItem('api_key', document.getElementById('api_key').value);
     localStorage.setItem('town', document.getElementById('town').value);
     localStorage.setItem('state', document.getElementById('state').value);
     localStorage.setItem('personality', document.getElementById('personality').value);
 }
 
 function enableSettingsPersistence() {
-    ['town', 'state', 'personality'].forEach(function(fieldId) {
+    ['api_key', 'town', 'state', 'personality'].forEach(function(fieldId) {
         document.getElementById(fieldId).addEventListener('input', function(event) {
             localStorage.setItem(fieldId, event.target.value);
         });
@@ -458,6 +459,7 @@ function sendFormData(imageFile, fileName) {
     formData.append('state', document.getElementById('state').value);
     formData.append('object', document.getElementById('object').value);
     formData.append('personality', document.getElementById('personality').value);
+    formData.append('api_key', document.getElementById('api_key').value);
     formData.append('model', document.getElementById('modelPicker').value);
     saveSettings();
 
@@ -525,8 +527,10 @@ function stopLoading(statusText) {
 }
 
 function retrieveLocalStorageData() {
-    // Remove values saved by older versions that allowed browser-provided API keys.
-    localStorage.removeItem('api_key');
+    var apiKey = localStorage.getItem('api_key');
+    if (apiKey !== null) {
+        document.getElementById('api_key').value = apiKey;
+    }
 
     var town = localStorage.getItem('town');
     if (town !== null) {

@@ -142,6 +142,56 @@ class EngineCompatibilityTests(unittest.TestCase):
 
         self.assertEqual(result, "Error code 11: Error in API call")
 
+    @patch("engine.requests.post")
+    def test_rejected_custom_key_returns_actionable_error(self, post):
+        image_path = self.make_image(b"\xff\xd8\xff\xe0" + b"test-jpeg-data", ".jpg")
+        post.return_value = Mock(status_code=401)
+
+        result = engine.query_recycling_info(
+            image_path,
+            "",
+            "",
+            api_key="rejected-key",
+            model="gpt-5.6-luna"
+        )
+
+        self.assertEqual(
+            result,
+            "Error code 14: custom OpenAI API key was rejected"
+        )
+        answer, detected_object, details = engine.separate_answer_and_details(result)
+        self.assertEqual(answer, result)
+        self.assertEqual(detected_object, "this")
+        self.assertEqual(
+            details,
+            "Your custom OpenAI API key was rejected. Update it, or clear the field to use the server key."
+        )
+
+    @patch("engine.requests.post")
+    def test_rejected_server_key_returns_server_configuration_error(self, post):
+        image_path = self.make_image(b"\xff\xd8\xff\xe0" + b"test-jpeg-data", ".jpg")
+        post.return_value = Mock(status_code=401)
+
+        with patch.dict(os.environ, {"OPENAI_API_KEY": "rejected-server-key"}):
+            result = engine.query_recycling_info(
+                image_path,
+                "",
+                "",
+                model="gpt-5.6-luna"
+            )
+
+        self.assertEqual(
+            result,
+            "Error code 14: server OpenAI API key was rejected"
+        )
+        answer, detected_object, details = engine.separate_answer_and_details(result)
+        self.assertEqual(answer, result)
+        self.assertEqual(detected_object, "this")
+        self.assertEqual(
+            details,
+            "The server OPENAI_API_KEY was rejected. Check the server configuration."
+        )
+
     def test_supported_model_selection_and_costs(self):
         self.assertEqual(defaults.getModel("gpt-5.6-luna"), "gpt-5.6-luna")
         self.assertEqual(defaults.getModel("unknown"), defaults.getDefaultModel())
