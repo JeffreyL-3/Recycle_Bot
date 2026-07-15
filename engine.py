@@ -159,6 +159,7 @@ def query_recycling_info(image_path, town, state, object=defaults.getDefaultObje
 
     if model == "gpt-5.6-luna":
         payload["reasoning_effort"] = "low"
+        payload["verbosity"] = "low"
 
     # Send request
     try:

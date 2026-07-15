@@ -34,7 +34,7 @@ class EngineCompatibilityTests(unittest.TestCase):
         return response
 
     @patch("engine.requests.post")
-    def test_luna_payload_uses_low_reasoning_and_png_media_type(self, post):
+    def test_luna_payload_uses_low_reasoning_and_verbosity_and_png_media_type(self, post):
         png_bytes = b"\x89PNG\r\n\x1a\n" + b"test-png-data"
         image_path = self.make_image(png_bytes, ".png")
         post.return_value = self.successful_response()
@@ -54,6 +54,7 @@ class EngineCompatibilityTests(unittest.TestCase):
 
         self.assertEqual(payload["model"], "gpt-5.6-luna")
         self.assertEqual(payload["reasoning_effort"], "low")
+        self.assertEqual(payload["verbosity"], "low")
         self.assertEqual(payload["max_completion_tokens"], 4000)
         self.assertNotIn("max_tokens", payload)
         self.assertEqual(payload["response_format"], engine.RECYCLING_RESPONSE_FORMAT)
@@ -82,6 +83,7 @@ class EngineCompatibilityTests(unittest.TestCase):
         payload = post.call_args.kwargs["json"]
         image_url = payload["messages"][1]["content"][1]["image_url"]["url"]
         self.assertNotIn("reasoning_effort", payload)
+        self.assertNotIn("verbosity", payload)
         self.assertEqual(payload["max_completion_tokens"], 1000)
         self.assertTrue(image_url.startswith("data:image/jpeg;base64,"))
 

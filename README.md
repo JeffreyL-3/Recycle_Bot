@@ -32,7 +32,7 @@ For Render, configure the environment variables on the web service and redeploy.
 The model picker supports:
 
 - `gpt-4o` (default)
-- `gpt-5.6-luna`, using `reasoning_effort: "low"`
+- `gpt-5.6-luna`, using `reasoning_effort: "low"` and `verbosity: "low"`
 
 The application intentionally keeps the existing Chat Completions integration. Requests use Structured Outputs, `max_completion_tokens`, and Base64 data URLs whose media type is detected from the uploaded bytes. Supported image inputs are JPEG, PNG, WebP, and non-animated GIF. Unknown model values fall back to `gpt-4o`.
 
