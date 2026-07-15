@@ -36,14 +36,6 @@ The model picker supports:
 
 The application intentionally keeps the existing Chat Completions integration. Requests use Structured Outputs, `max_completion_tokens`, and Base64 data URLs whose media type is detected from the uploaded bytes. Supported image inputs are JPEG, PNG, WebP, and non-animated GIF. Unknown model values fall back to `gpt-4o`.
 
-Relevant OpenAI documentation:
-
-- [GPT-5.6 Luna](https://developers.openai.com/api/docs/models/gpt-5.6-luna)
-- [Chat Completions](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create)
-- [Images and vision](https://developers.openai.com/api/docs/guides/images-vision)
-- [API error codes](https://developers.openai.com/api/docs/guides/error-codes#api-errors)
-- [API pricing](https://developers.openai.com/api/docs/pricing)
-
 The in-code cost estimate uses standard token rates and does not apply cached-input discounts, cache-write charges, regional uplifts, or alternate service-tier pricing.
 
 ## Features
